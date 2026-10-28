@@ -1,0 +1,19 @@
+node_modules
+.next
+out
+build
+.DS_Store
+*.pem
+.env*.local
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# runtime data
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+data/uploads/
+
+# 本地截图产物
+.shots/

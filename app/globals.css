@@ -1,0 +1,653 @@
+@import "tailwindcss";
+
+/* ================================================================
+   设计令牌 (Design Tokens) — Nocturne 夜航
+   画布：深蓝夜色 #05070E
+   强调：月光蓝 #A8CCFF  +  暖琥珀 #F0C48A
+   中性：#EDF1F7 / #97A2B8 / #5C6780 / #1C2436
+   亮色主题通过 [data-theme="light"] 覆写同一批变量。
+   ================================================================ */
+
+:root {
+  --bg: #05070e;
+  --bg-elev: #090d17;
+  --surface: #0d1220;
+  --surface-2: #141b2c;
+  --line: #1c2436;
+  --line-strong: #2b3750;
+
+  --fg: #edf1f7;
+  --fg-muted: #97a2b8;
+  --fg-subtle: #5c6780;
+
+  /* --accent-user / --accent2-user 由后台「主题」设置写入 <html> 内联样式 */
+  --accent-user: #a8ccff;
+  --accent2-user: #f0c48a;
+
+  --accent: var(--accent-user);
+  --accent-2: var(--accent2-user);
+  --accent-text: var(--accent-user);
+  --accent-ink: #05070e;
+
+  --radius: 14px;
+
+  --font-display: "Instrument Serif", "Noto Serif SC", "Iowan Old Style", Georgia, serif;
+  --font-body: "Inter", "Noto Sans SC", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-script: "Caveat", "Segoe Script", cursive;
+
+  --nav-h: 68px;
+  --gutter: clamp(1.25rem, 4vw, 4.5rem);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* 悬浮胶囊导航的玻璃：两套主题都保持「深底白字」，
+     这样它压在深色视频首屏和浅色正文上时文字都读得出来。 */
+  --nav-glass: rgba(4, 8, 18, 0.42);
+  --nav-glass-border: rgba(255, 255, 255, 0.14);
+  --nav-glass-strong: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] {
+  --bg: #f5f3ee;
+  --bg-elev: #fffdf9;
+  --surface: #ffffff;
+  --surface-2: #efede6;
+  --line: #e2dfd6;
+  --line-strong: #cfccc0;
+
+  --fg: #10141c;
+  --fg-muted: #5a6070;
+  --fg-subtle: #939aa8;
+
+  /* 亮色底上强调色压深一档，保证文字对比度 */
+  --accent: color-mix(in srgb, var(--accent-user) 62%, #16345c);
+  --accent-2: color-mix(in srgb, var(--accent2-user) 74%, #6b4517);
+  --accent-text: color-mix(in srgb, var(--accent-user) 58%, #12233d);
+  --accent-ink: #10141c;
+
+  --nav-glass: rgba(14, 20, 34, 0.62);
+  --nav-glass-border: rgba(255, 255, 255, 0.18);
+  --nav-glass-strong: rgba(255, 255, 255, 0.14);
+}
+
+/* Tailwind v4：把运行时变量映射成工具类 */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-elev: var(--bg-elev);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-subtle: var(--fg-subtle);
+  --color-accent: var(--accent);
+  --color-accent2: var(--accent-2);
+  --color-accent-ink: var(--accent-ink);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+  --font-serif: "Instrument Serif", "Noto Serif SC", Georgia, serif;
+
+  --radius-token: var(--radius);
+}
+
+/* ================================================================
+   Landing 模块（CTA 区块）
+   这套是独立的白色半透明梯度，只服务于深色画布上的 Landing 区块，
+   不跟全站的主题色互相干扰。
+   ================================================================ */
+
+@theme inline {
+  --color-landing-surface: rgba(255, 255, 255, 0.1);
+  --color-landing-surface-hover: rgba(255, 255, 255, 0.16);
+  --color-landing-border: rgba(255, 255, 255, 0.1);
+  --color-landing-border-strong: rgba(255, 255, 255, 0.2);
+  --color-landing-text: rgba(255, 255, 255, 0.8);
+  --color-landing-text-muted: rgba(255, 255, 255, 0.6);
+}
+
+/* 磨砂玻璃表面 */
+@utility liquid-glass {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* 亮色主题下的玻璃保持深色：这套玻璃只用在深色上下文里
+   （悬浮导航、Landing 工作台），翻成白底会让白字消失。 */
+
+/* ================================================================
+   基础
+   必须放进 base 层：Tailwind v4 的工具类在 utilities 层，
+   而未分层的 CSS 优先级高于任何分层 —— 写成无层样式会把
+   text-* / bg-* 这类工具类全部盖掉（比如 a { color: inherit }
+   会让链接上的 text-accent 失效）。
+   ================================================================ */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    scrollbar-color: var(--line-strong) var(--bg);
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    transition: background-color 0.45s var(--ease-in-out), color 0.45s var(--ease-in-out);
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
+  /* 细滚动条 */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border: 3px solid var(--bg);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--fg-subtle);
+  }
+}
+
+/* ================================================================
+   排版尺度
+   Nocturne 用衬线做标题：Instrument Serif（西文）+ Noto Serif SC（中文）
+   ================================================================ */
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.t-display {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 8.2vw, 7.2rem);
+  line-height: 0.98;
+  letter-spacing: -0.022em;
+  font-weight: 400;
+}
+
+.t-h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4.6vw, 3.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.018em;
+  font-weight: 400;
+}
+
+.t-h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.8vw, 2.4rem);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  font-weight: 400;
+}
+
+.t-h3 {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 1.7vw, 1.4rem);
+  line-height: 1.28;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+}
+
+.t-body-lg {
+  font-size: clamp(1.02rem, 1.55vw, 1.25rem);
+  line-height: 1.68;
+  letter-spacing: -0.005em;
+}
+
+.t-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+
+.t-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 段落文本：后台输入的换行保留为段落 */
+.prose-body p {
+  margin: 0 0 1.15em;
+}
+.prose-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* 英文大写小标签：导航、区块眉、编号 */
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* ================================================================
+   布局工具
+   ================================================================ */
+
+.u-container {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+  max-width: 112rem;
+}
+
+.u-rule {
+  height: 1px;
+  background: var(--line);
+  width: 100%;
+}
+
+.u-link-underline {
+  position: relative;
+  display: inline-block;
+}
+.u-link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.5s var(--ease-out);
+}
+.u-link-underline:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ================================================================
+   夜景氛围
+   ================================================================ */
+
+/* 夜空底色：深蓝 → 近黑，顶部略亮，模拟天光残留 */
+.night-sky {
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(38, 62, 106, 0.55), transparent 62%),
+    radial-gradient(90% 70% at 12% 8%, rgba(24, 44, 82, 0.5), transparent 60%),
+    linear-gradient(180deg, #070c17 0%, #05070e 55%, #04060c 100%);
+}
+
+/* 暗角：把视线收到画面中心 */
+.night-vignette {
+  background: radial-gradient(120% 90% at 50% 42%, transparent 38%, rgba(3, 5, 11, 0.72) 100%);
+}
+
+/* 颗粒噪点：压掉渐变的塑料感 */
+.grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* 星星闪烁 */
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+.animate-twinkle {
+  animation: twinkle 4s var(--ease-in-out) infinite;
+}
+
+/* ================================================================
+   滚动进场动画
+   渐进增强：只有 JS 可用时（html.js）才隐藏初始状态。
+   JS 失效时内容依然完整可见，不会变成一片空白。
+   ================================================================ */
+
+.js [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 26px, 0);
+  transition: opacity 0.9s var(--ease-out), transform 0.9s var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+.js [data-reveal].is-in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/* clip 揭示：裁切的是「子元素」，不是被观察的元素本身。
+   原因：Chrome 的 IntersectionObserver 会用 clip-path 后的可见区域算相交比，
+   若裁切自身，相交比恒为 0，回调永不触发 → 元素永久隐藏。 */
+.js [data-reveal="clip"] {
+  opacity: 1;
+  transform: none;
+}
+.js [data-reveal="clip"] > * {
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path 1.05s var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.js [data-reveal="clip"].is-in > * {
+  clip-path: inset(0 0 0 0);
+}
+
+/* 逐字/逐行遮罩上移
+   注意：这里不要写 display —— 本文件是未分层的普通 CSS，
+   优先级会压过 Tailwind 的 inline-block 工具类，导致遮罩层变成整行宽、把后面的元素挤换行。 */
+[data-mask] {
+  overflow: hidden;
+}
+.js [data-mask] > span {
+  display: block;
+  transform: translate3d(0, 105%, 0);
+  transition: transform 1.05s var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.js [data-mask].is-in > span {
+  transform: translate3d(0, 0, 0);
+}
+
+/* ================================================================
+   图片
+   ================================================================ */
+
+.media {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+}
+
+/* 绝对定位填充：不依赖父元素的 height 是否为确定值 */
+.media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.85s var(--ease-out), filter 0.6s var(--ease-in-out);
+}
+
+.group:hover .media img,
+.media:hover img {
+  transform: scale(1.045);
+}
+
+/* ================================================================
+   跑马灯
+   ================================================================ */
+
+@keyframes marquee-x {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-x var(--marquee-duration, 32s) linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* ================================================================
+   自定义光标
+   只在前台启用；文本输入处交还给原生文字光标。
+   ================================================================ */
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-custom-cursor="on"],
+  html[data-custom-cursor="on"] * {
+    cursor: none;
+  }
+
+  /* 输入框、可编辑区域：保留系统的文字光标和插入点 */
+  html[data-custom-cursor="on"] :is(input, textarea, select, [contenteditable="true"]),
+  html[data-custom-cursor="on"] :is(input, textarea, select, [contenteditable="true"]) * {
+    cursor: text;
+  }
+}
+
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 999px;
+  transform: translate3d(-50%, -50%, 0);
+}
+
+.cursor-dot {
+  width: 5px;
+  height: 5px;
+  background: var(--accent);
+  transition: width 0.24s var(--ease-out), height 0.24s var(--ease-out),
+    opacity 0.22s var(--ease-out);
+}
+
+.cursor-ring {
+  width: 22px;
+  height: 22px;
+  border: 1px solid color-mix(in srgb, var(--fg) 15%, transparent);
+  transition: width 0.3s var(--ease-out), height 0.3s var(--ease-out),
+    background-color 0.3s var(--ease-out), border-color 0.3s var(--ease-out), opacity 0.2s;
+}
+
+/* 悬停可点元素：环让位给元素自身的 hover 状态，只留一个稍大的点。
+   （光标不该在按钮文字上糊一个圈） */
+.cursor-ring.is-active {
+  opacity: 0;
+}
+
+.cursor-dot.is-active {
+  width: 9px;
+  height: 9px;
+}
+
+.cursor-dot.is-hidden,
+.cursor-ring.is-hidden {
+  opacity: 0;
+}
+
+/* ================================================================
+   滚动进度条
+   ================================================================ */
+
+.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: var(--accent);
+  z-index: 60;
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+
+/* ================================================================
+   导航
+   ================================================================ */
+
+.nav-shell {
+  transition: transform 0.5s var(--ease-out), background-color 0.4s var(--ease-in-out),
+    border-color 0.4s var(--ease-in-out);
+}
+
+.nav-shell.is-hidden {
+  transform: translate3d(0, -110%, 0);
+}
+
+.nav-shell.is-scrolled {
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom-color: var(--line);
+}
+
+/* ================================================================
+   动效工具
+   ================================================================ */
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -7px, 0);
+  }
+}
+
+.animate-float {
+  animation: float-y 4.5s var(--ease-in-out) infinite;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.82);
+  }
+}
+
+.pulse-dot {
+  animation: pulse-dot 2.2s var(--ease-in-out) infinite;
+}
+
+/* ================================================================
+   Landing 模块：Velorah 首屏预览的进场动画
+   ================================================================ */
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-rise {
+  animation: fade-rise 0.8s ease-out both;
+}
+
+.animate-fade-rise-delay {
+  animation: fade-rise 0.8s ease-out 0.25s both;
+}
+
+.animate-fade-rise-delay-2 {
+  animation: fade-rise 0.8s ease-out 0.5s both;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+
+/* ================================================================
+   无障碍：尊重系统的减少动效设置
+   ================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+  .js [data-reveal="clip"] > * {
+    clip-path: inset(0 0 0 0);
+  }
+  .js [data-mask] > span {
+    transform: none;
+  }
+}
